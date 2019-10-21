@@ -25,6 +25,8 @@ class TrainTicketsFinder():
         self.args = docopt(__doc__)
         # 指定 requests 响应编码
         self.response_encoding = 'utf-8'
+        # 不支持的坐席类别用下面的符号表示
+        self.unsupported_seat = Fore.YELLOW + '×' + Style.RESET_ALL
         # 获取并加载全国火车站站名信息
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.stations_json_file_cn_key = os.path.join(current_dir, 'stations_cn_key.json')
@@ -136,8 +138,10 @@ class TrainTicketsFinder():
                 no_seat = train_info[26]
 
                 result_table.add_row([
-                    train_num, station, time, duration, special_seat, first_seat,
-                    second_seat, soft_sleep, hard_sleep, hard_seat, no_seat
+                    train_num, station, time, duration, special_seat or self.unsupported_seat,
+                    first_seat or self.unsupported_seat, second_seat or self.unsupported_seat,
+                    soft_sleep or self.unsupported_seat, hard_sleep or self.unsupported_seat,
+                    hard_seat or self.unsupported_seat, no_seat or self.unsupported_seat
                 ])
 
             print(result_table)
