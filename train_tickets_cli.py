@@ -67,6 +67,15 @@ class TrainTicketsFinder():
         leftTicketDTO.to_station - 到达车站，同出发车站做了一样的处理
         purpose_codes - 普通票或学生票，普通票传值为 ADULT
         '''
+        # 检查输入的城市名是否正确
+        if self.args['<from_city>'] not in self.stations_cn_key.keys():
+            print(Fore.RED + '\n参数错误：出发城市 [%s] 不是一个正确的城市名' % self.args['<from_city>'] + Style.RESET_ALL)
+            return False
+        
+        if self.args['<dest_city>'] not in self.stations_cn_key.keys():
+            print(Fore.RED + '\n参数错误：到达城市 [%s] 不是一个正确的城市名' % self.args['<dest_city>'] + Style.RESET_ALL)
+            return False
+
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
         request_params = {
             'leftTicketDTO.train_date': datetime.date.today() if self.args['<date>'] == None else self.args['<date>'],
