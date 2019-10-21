@@ -26,8 +26,9 @@ class TrainTicketsFinder():
         # 指定 requests 响应编码
         self.response_encoding = 'utf-8'
         # 获取并加载全国火车站站名信息
-        self.stations_json_file_cn_key = 'stations_cn_key.json'
-        self.stations_json_file_en_key = 'stations_en_key.json'
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.stations_json_file_cn_key = os.path.join(current_dir, 'stations_cn_key.json')
+        self.stations_json_file_en_key = os.path.join(current_dir, 'stations_en_key.json')
         self.fetch_all_station_names()
         self.stations_cn_key = json.load(open(self.stations_json_file_cn_key, 'rb'))
         self.stations_en_key = json.load(open(self.stations_json_file_en_key, 'rb'))
@@ -53,9 +54,9 @@ class TrainTicketsFinder():
             if data.status_code == 200:
                 stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)', data.text)
                 stations_dict_cn_key = dict(stations)
-                stations_json_file_cn_key = open(self.stations_json_file_cn_key, 'w')
+                stations_json_file_cn_key = open(self.stations_json_file_cn_key, 'w', encoding = data.encoding)
                 json.dump(stations_dict_cn_key, stations_json_file_cn_key, ensure_ascii = False)
-                stations_json_file_en_key = open(self.stations_json_file_en_key, 'w')
+                stations_json_file_en_key = open(self.stations_json_file_en_key, 'w', encoding = data.encoding)
                 stations_dict_en_key = dict(zip(stations_dict_cn_key.values(), stations_dict_cn_key.keys()))
                 json.dump(stations_dict_en_key, stations_json_file_en_key, ensure_ascii = False)
     
