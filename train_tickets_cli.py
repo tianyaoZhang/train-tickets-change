@@ -29,8 +29,8 @@ class TrainTicketsFinder():
         self.stations_json_file_cn_key = 'stations_cn_key.json'
         self.stations_json_file_en_key = 'stations_en_key.json'
         self.fetch_all_station_names()
-        self.stations_cn_key = json.load(open(self.stations_json_file_cn_key, 'r'))
-        self.stations_en_key = json.load(open(self.stations_json_file_en_key, 'r'))
+        self.stations_cn_key = json.load(open(self.stations_json_file_cn_key, 'rb'))
+        self.stations_en_key = json.load(open(self.stations_json_file_en_key, 'rb'))
         # 尝试获取 12306 网站 cookie
         self.try_fetching_cookie()
 
