@@ -81,7 +81,7 @@ class TrainTicketsFinder():
 
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
         request_params = {
-            'leftTicketDTO.train_date': datetime.date.today() if self.args['<date>'] == None else self.args['<date>'],
+            'leftTicketDTO.train_date': self.args['<date>'] or datetime.date.today(),
             'leftTicketDTO.from_station': self.stations_cn_key[self.args['<from_city>']],
             'leftTicketDTO.to_station': self.stations_cn_key[self.args['<dest_city>']],
             'purpose_codes': 'ADULT'
