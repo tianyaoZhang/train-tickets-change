@@ -13,7 +13,7 @@ import os
 import re
 import json
 import requests
-import datetime
+from datetime import date
 from docopt import docopt
 from colorama import Fore, Style
 from prettytable import PrettyTable
@@ -79,9 +79,16 @@ class TrainTicketsFinder():
             print(Fore.RED + '\n参数错误：到达城市 [%s] 不是一个正确的城市名' % self.args['<dest_city>'] + Style.RESET_ALL)
             return False
 
+        # 检查输入的乘车日期是否正确
+        today_date_str = str(date.today())
+        self.args['<date>'] = self.args['<date>'] or today_date_str
+        if self.args['<date>'] < today_date_str:
+            print(Fore.YELLOW + '\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % self.args['<date>'])
+            self.args['<date>'] = date.today()
+
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
         request_params = {
-            'leftTicketDTO.train_date': self.args['<date>'] or datetime.date.today(),
+            'leftTicketDTO.train_date': self.args['<date>'],
             'leftTicketDTO.from_station': self.stations_cn_key[self.args['<from_city>']],
             'leftTicketDTO.to_station': self.stations_cn_key[self.args['<dest_city>']],
             'purpose_codes': 'ADULT'
