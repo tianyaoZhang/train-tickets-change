@@ -26,7 +26,7 @@ class TrainTicketsFinder():
         # 指定 requests 响应编码
         self.response_encoding = 'utf-8'
         # 不支持的坐席类别用下面的符号表示
-        self.unsupported_seat = Fore.YELLOW + '×' + Style.RESET_ALL
+        self.unsupported_seat = Fore.LIGHTYELLOW_EX + '×' + Style.RESET_ALL
         # 获取并加载全国火车站站名信息
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.stations_json_file_cn_key = os.path.join(current_dir, 'stations_cn_key.json')
@@ -72,18 +72,19 @@ class TrainTicketsFinder():
         '''
         # 检查输入的城市名是否正确
         if self.args['<from_city>'] not in self.stations_cn_key.keys():
-            print(Fore.RED + '\n参数错误：出发城市 [%s] 不是一个正确的城市名' % self.args['<from_city>'] + Style.RESET_ALL)
+            print(Fore.LIGHTRED_EX + '\n参数错误：出发城市 [%s] 不是一个正确的城市名' % self.args['<from_city>'] + Style.RESET_ALL)
             return False
         
         if self.args['<dest_city>'] not in self.stations_cn_key.keys():
-            print(Fore.RED + '\n参数错误：到达城市 [%s] 不是一个正确的城市名' % self.args['<dest_city>'] + Style.RESET_ALL)
+            print(Fore.LIGHTRED_EX + '\n参数错误：到达城市 [%s] 不是一个正确的城市名' % self.args['<dest_city>'] + Style.RESET_ALL)
             return False
 
         # 检查输入的乘车日期是否正确
         today_date_str = str(date.today())
         self.args['<date>'] = self.args['<date>'] or today_date_str
         if self.args['<date>'] < today_date_str:
-            print(Fore.YELLOW + '\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % self.args['<date>'])
+            warning = '\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % self.args['<date>']
+            print(Fore.LIGHTYELLOW_EX + warning + Style.RESET_ALL)
             self.args['<date>'] = date.today()
 
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
@@ -98,10 +99,10 @@ class TrainTicketsFinder():
         if response.status_code == 200:
             response_json = response.json()
             trains_info = response_json['data']['result']
-            train_date = Fore.YELLOW + str(request_params['leftTicketDTO.train_date']) + Style.RESET_ALL
-            from_city = Fore.GREEN + self.args['<from_city>'] + Style.RESET_ALL
-            dest_city = Fore.RED + self.args['<dest_city>'] + Style.RESET_ALL
-            train_count = Fore.BLUE + str(len(trains_info)) + Style.RESET_ALL
+            train_date = Fore.LIGHTYELLOW_EX + str(request_params['leftTicketDTO.train_date']) + Style.RESET_ALL
+            from_city = Fore.LIGHTGREEN_EX + self.args['<from_city>'] + Style.RESET_ALL
+            dest_city = Fore.LIGHTRED_EX + self.args['<dest_city>'] + Style.RESET_ALL
+            train_count = Fore.LIGHTBLUE_EX + str(len(trains_info)) + Style.RESET_ALL
             print('\n查询到 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
 
             result_table = PrettyTable()
@@ -118,14 +119,14 @@ class TrainTicketsFinder():
                 # 车次
                 train_num = train_info[3]
                 # 出发车站
-                from_station = Fore.GREEN + self.stations_en_key[train_info[6]] + Style.RESET_ALL
+                from_station = Fore.LIGHTGREEN_EX + self.stations_en_key[train_info[6]] + Style.RESET_ALL
                 # 到达车站
-                dest_station = Fore.RED + self.stations_en_key[train_info[7]] + Style.RESET_ALL
+                dest_station = Fore.LIGHTRED_EX + self.stations_en_key[train_info[7]] + Style.RESET_ALL
                 station = from_station + '\n' + dest_station
                 # 发车时间
-                from_time = Fore.GREEN + train_info[8] + Style.RESET_ALL
+                from_time = Fore.LIGHTGREEN_EX + train_info[8] + Style.RESET_ALL
                 # 到达时间
-                dest_time = Fore.RED + train_info[9] + Style.RESET_ALL
+                dest_time = Fore.LIGHTRED_EX + train_info[9] + Style.RESET_ALL
                 time = from_time + '\n' + dest_time
                 # 历时多久
                 duration = train_info[10]
@@ -180,4 +181,3 @@ class TrainTicketsFinder():
 if __name__ == '__main__':
     app = TrainTicketsFinder()
     app.query_satisfied_trains_info()
-    
