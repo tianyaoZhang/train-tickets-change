@@ -129,31 +129,55 @@ class TrainTicketsFinder():
                 time = from_time + '\n' + dest_time
                 # 历时多久
                 duration = train_info[10]
-                # 商务座/特等座余票
-                special_seat = train_info[32]
-                # 一等座余票
-                first_seat = train_info[31]
-                # 二等座余票
-                second_seat = train_info[30]
-                # 软卧余票
-                soft_sleep = train_info[23]
-                # 硬卧余票
-                hard_sleep = train_info[28]
-                # 硬座余票
-                hard_seat = train_info[29]
-                # 站票余票
-                no_seat = train_info[26]
+                # 余票及对应票价
+                prices = self.query_train_prices(train_info, train_date = request_params['leftTicketDTO.train_date'])
 
-                result_table.add_row([
-                    train_num, station, time, duration, special_seat or self.unsupported_seat,
-                    first_seat or self.unsupported_seat, second_seat or self.unsupported_seat,
-                    soft_sleep or self.unsupported_seat, hard_sleep or self.unsupported_seat,
-                    hard_seat or self.unsupported_seat, no_seat or self.unsupported_seat
+                result_table.add_row([train_num, station, time, duration, prices['special_seat'], prices['first_seat'],
+                    prices['second_seat'], prices['soft_sleep'], prices['hard_sleep'], prices['hard_seat'], prices['no_seat']
                 ])
 
             print(result_table)
+
+    def query_train_prices(self, train_info, train_date):
+        '''查询各个坐席的票价'''
+
+        # 查询票价需要用到的请求参数
+        train_uuid = train_info[2]
+        from_station_no = train_info[16]
+        to_station_no = train_info[17]
+        seat_types = train_info[35]
+
+        api = 'https://kyfw.12306.cn/otn/leftTicket/queryTicketPrice'
+        request_params = {
+            'train_no': train_uuid,
+            'from_station_no': from_station_no,
+            'to_station_no': to_station_no,
+            'seat_types': seat_types,
+            'train_date': train_date
+        }
+        response = requests.get(api, params = request_params, cookies = self.cookie)
+
+        prices = {
+            'special_seat': train_info[32] or self.unsupported_seat, # 商务座/特等座余票
+            'first_seat': train_info[31] or self.unsupported_seat,   # 一等座余票
+            'second_seat': train_info[30] or self.unsupported_seat,  # 二等座余票
+            'soft_sleep': train_info[23] or self.unsupported_seat,   # 软卧余票
+            'hard_sleep': train_info[28] or self.unsupported_seat,   # 硬卧余票
+            'hard_seat': train_info[29] or self.unsupported_seat,    # 硬座余票
+            'no_seat': train_info[26] or self.unsupported_seat       # 站票余票
+        }
+
+        if response.status_code == 200:
+            price_info = response.json().get('data')
+            prices['soft_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info['A4'] + Style.RESET_ALL
+            prices['hard_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info['A3'] + Style.RESET_ALL
+            prices['hard_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info['A1'] + Style.RESET_ALL
+            prices['no_seat'] = prices['hard_seat']
+
+        return prices
 
 
 if __name__ == '__main__':
     app = TrainTicketsFinder()
     app.query_satisfied_trains_info()
+    
