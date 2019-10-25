@@ -12,6 +12,7 @@ Example:
 import os
 import re
 import json
+import time
 import requests
 from datetime import date
 from docopt import docopt
@@ -25,6 +26,8 @@ class TrainTicketsFinder():
         self.args = docopt(__doc__)
         # 指定 requests 响应编码
         self.response_encoding = 'utf-8'
+        # 每次接口请求间隔时间限制，防止请求过快被返回异常
+        self.request_interval_seconds = 5
         # 不支持的坐席类别用下面的符号表示
         self.unsupported_seat = Fore.LIGHTYELLOW_EX + '×' + Style.RESET_ALL
         # 获取并加载全国火车站站名信息
@@ -169,11 +172,21 @@ class TrainTicketsFinder():
         }
 
         if response.status_code == 200:
+            '''
+            通过测试和观察，查询车票请求频率过快时会大概率导致请求失败，从而得到错误页面而不是正确的响应
+            所以此处暂时以简单的方式做一个请求频率限制，每请求成功一次睡眠几秒钟，以此来规避请求异常问题
+            '''
+            print('编号为 %s 的列车票价请求成功，%d 秒后执行下一次车票查询请求' % (train_uuid, self.request_interval_seconds))
+            time.sleep(self.request_interval_seconds)
             price_info = response.json().get('data')
+            prices['special_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A9', '') + Style.RESET_ALL
+            prices['first_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('M', '') + Style.RESET_ALL
+            prices['second_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('O', '') + Style.RESET_ALL
             prices['soft_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A4', '') + Style.RESET_ALL
             prices['hard_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A3', '') + Style.RESET_ALL
             prices['hard_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A1', '') + Style.RESET_ALL
-            prices['no_seat'] = prices['hard_seat']
+            # 站票票价先匹配普通列车，等于硬座票价，如果匹配不到，那么就等于二等座的票价
+            prices['no_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A1', price_info.get('WZ', '')) + Style.RESET_ALL
 
         return prices
 
