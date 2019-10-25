@@ -170,9 +170,9 @@ class TrainTicketsFinder():
 
         if response.status_code == 200:
             price_info = response.json().get('data')
-            prices['soft_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info['A4'] + Style.RESET_ALL
-            prices['hard_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info['A3'] + Style.RESET_ALL
-            prices['hard_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info['A1'] + Style.RESET_ALL
+            prices['soft_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A4', '') + Style.RESET_ALL
+            prices['hard_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A3', '') + Style.RESET_ALL
+            prices['hard_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A1', '') + Style.RESET_ALL
             prices['no_seat'] = prices['hard_seat']
 
         return prices
