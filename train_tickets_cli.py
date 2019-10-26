@@ -14,9 +14,9 @@ import re
 import json
 import time
 import requests
+import colortext
 from datetime import date
 from docopt import docopt
-from colorama import Fore, Style
 from prettytable import PrettyTable
 
 class TrainTicketsFinder():
@@ -29,7 +29,7 @@ class TrainTicketsFinder():
         # 每次接口请求间隔时间限制，防止请求过快被返回异常
         self.request_interval_seconds = 5
         # 不支持的坐席类别用下面的符号表示
-        self.unsupported_seat = Fore.LIGHTYELLOW_EX + '×' + Style.RESET_ALL
+        self.unsupported_seat = colortext.light_yellow('×')
         # 获取并加载全国火车站站名信息
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.stations_json_file_cn_key = os.path.join(current_dir, 'stations_cn_key.json')
@@ -75,19 +75,18 @@ class TrainTicketsFinder():
         '''
         # 检查输入的城市名是否正确
         if self.args['<from_city>'] not in self.stations_cn_key.keys():
-            print(Fore.LIGHTRED_EX + '\n参数错误：出发城市 [%s] 不是一个正确的城市名' % self.args['<from_city>'] + Style.RESET_ALL)
+            print(colortext.light_red('\n参数错误：出发城市 [%s] 不是一个正确的城市名' % self.args['<from_city>']))
             return False
         
         if self.args['<dest_city>'] not in self.stations_cn_key.keys():
-            print(Fore.LIGHTRED_EX + '\n参数错误：到达城市 [%s] 不是一个正确的城市名' % self.args['<dest_city>'] + Style.RESET_ALL)
+            print(colortext.light_red('\n参数错误：到达城市 [%s] 不是一个正确的城市名' % self.args['<dest_city>']))
             return False
 
         # 检查输入的乘车日期是否正确
         today_date_str = str(date.today())
         self.args['<date>'] = self.args['<date>'] or today_date_str
         if self.args['<date>'] < today_date_str:
-            warning = '\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % self.args['<date>']
-            print(Fore.LIGHTYELLOW_EX + warning + Style.RESET_ALL)
+            print(colortext.light_yellow('\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % self.args['<date>']))
             self.args['<date>'] = date.today()
 
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
@@ -102,10 +101,10 @@ class TrainTicketsFinder():
         if response.status_code == 200:
             response_json = response.json()
             trains_info = response_json['data']['result']
-            train_date = Fore.LIGHTYELLOW_EX + str(request_params['leftTicketDTO.train_date']) + Style.RESET_ALL
-            from_city = Fore.LIGHTGREEN_EX + self.args['<from_city>'] + Style.RESET_ALL
-            dest_city = Fore.LIGHTRED_EX + self.args['<dest_city>'] + Style.RESET_ALL
-            train_count = Fore.LIGHTBLUE_EX + str(len(trains_info)) + Style.RESET_ALL
+            train_date = colortext.light_yellow(request_params['leftTicketDTO.train_date'])
+            from_city = colortext.light_green(self.args['<from_city>'])
+            dest_city = colortext.light_red(self.args['<dest_city>'])
+            train_count = colortext.light_blue(len(trains_info))
             print('\n查询到 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
 
             result_table = PrettyTable()
@@ -122,14 +121,14 @@ class TrainTicketsFinder():
                 # 车次
                 train_num = train_info[3]
                 # 出发车站
-                from_station = Fore.LIGHTGREEN_EX + self.stations_en_key[train_info[6]] + Style.RESET_ALL
+                from_station = colortext.light_green(self.stations_en_key[train_info[6]])
                 # 到达车站
-                dest_station = Fore.LIGHTRED_EX + self.stations_en_key[train_info[7]] + Style.RESET_ALL
+                dest_station = colortext.light_red(self.stations_en_key[train_info[7]])
                 station = from_station + '\n' + dest_station
                 # 发车时间
-                from_time = Fore.LIGHTGREEN_EX + train_info[8] + Style.RESET_ALL
+                from_time = colortext.light_green(train_info[8])
                 # 到达时间
-                dest_time = Fore.LIGHTRED_EX + train_info[9] + Style.RESET_ALL
+                dest_time = colortext.light_red(train_info[9])
                 time = from_time + '\n' + dest_time
                 # 历时多久
                 duration = train_info[10]
@@ -179,14 +178,14 @@ class TrainTicketsFinder():
             print('编号为 %s 的列车票价请求成功，%d 秒后执行下一次车票查询请求' % (train_uuid, self.request_interval_seconds))
             time.sleep(self.request_interval_seconds)
             price_info = response.json().get('data')
-            prices['special_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A9', '') + Style.RESET_ALL
-            prices['first_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('M', '') + Style.RESET_ALL
-            prices['second_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('O', '') + Style.RESET_ALL
-            prices['soft_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A4', '') + Style.RESET_ALL
-            prices['hard_sleep'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A3', '') + Style.RESET_ALL
-            prices['hard_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A1', '') + Style.RESET_ALL
+            prices['special_seat'] += '\n' + colortext.light_yellow(price_info.get('A9', ''))
+            prices['first_seat'] += '\n' + colortext.light_yellow(price_info.get('M', ''))
+            prices['second_seat'] += '\n' + colortext.light_yellow(price_info.get('O', ''))
+            prices['soft_sleep'] += '\n' + colortext.light_yellow(price_info.get('A4', ''))
+            prices['hard_sleep'] += '\n' + colortext.light_yellow(price_info.get('A3', ''))
+            prices['hard_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', ''))
             # 站票票价先匹配普通列车，等于硬座票价，如果匹配不到，那么就等于二等座的票价
-            prices['no_seat'] += '\n' + Fore.LIGHTYELLOW_EX + price_info.get('A1', price_info.get('WZ', '')) + Style.RESET_ALL
+            prices['no_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', price_info.get('WZ', '')))
 
         return prices
 
