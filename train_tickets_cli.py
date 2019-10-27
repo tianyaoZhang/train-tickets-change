@@ -75,37 +75,39 @@ class TrainTicketsFinder():
         leftTicketDTO.to_station - 到达车站，同出发车站做了一样的处理
         purpose_codes - 普通票或学生票，普通票传值为 ADULT
         '''
+        from_city = self.args['<from_city>']
+        dest_city = self.args['<dest_city>']
         # 检查输入的城市名是否正确
-        if self.args['<from_city>'] not in self.stations_cn_key.keys():
-            print(colortext.light_red('\n参数错误：出发城市 [%s] 不是一个正确的城市名' % self.args['<from_city>']))
+        if from_city not in self.stations_cn_key.keys():
+            print(colortext.light_red('\n参数错误：出发城市 [%s] 不是一个正确的城市名' % from_city))
             return False
         
-        if self.args['<dest_city>'] not in self.stations_cn_key.keys():
-            print(colortext.light_red('\n参数错误：到达城市 [%s] 不是一个正确的城市名' % self.args['<dest_city>']))
+        if dest_city not in self.stations_cn_key.keys():
+            print(colortext.light_red('\n参数错误：到达城市 [%s] 不是一个正确的城市名' % dest_city))
             return False
 
         # 检查输入的乘车日期是否正确
+        train_date = self.args['<date>']
         today_date_str = str(date.today())
-        self.args['<date>'] = self.args['<date>'] or today_date_str
-        if self.args['<date>'] < today_date_str:
-            print(colortext.light_yellow('\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % self.args['<date>']))
-            self.args['<date>'] = date.today()
+        train_date = train_date or today_date_str
+        if train_date < today_date_str:
+            print(colortext.light_yellow('\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % train_date))
+            train_date = today_date_str
 
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
         request_params = {
-            'leftTicketDTO.train_date': self.args['<date>'],
-            'leftTicketDTO.from_station': self.stations_cn_key[self.args['<from_city>']],
-            'leftTicketDTO.to_station': self.stations_cn_key[self.args['<dest_city>']],
+            'leftTicketDTO.train_date': train_date,
+            'leftTicketDTO.from_station': self.stations_cn_key[from_city],
+            'leftTicketDTO.to_station': self.stations_cn_key[dest_city],
             'purpose_codes': 'ADULT'
         }
         response = requests.get(api, params = request_params, cookies = self.cookie)
 
         if response.status_code == 200:
-            response_json = response.json()
-            trains_info = response_json['data']['result']
-            train_date = colortext.light_yellow(request_params['leftTicketDTO.train_date'])
-            from_city = colortext.light_green(self.args['<from_city>'])
-            dest_city = colortext.light_red(self.args['<dest_city>'])
+            trains_info = response.json().get('data').get('result')
+            train_date = colortext.light_yellow(train_date)
+            from_city = colortext.light_green(from_city)
+            dest_city = colortext.light_red(dest_city)
             train_count = colortext.light_blue(len(trains_info))
             print('\n查询到 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
 
