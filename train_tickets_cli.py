@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-基于 Python 3.7 的命令行版 12306 火车票查询器
+基于 Python 3.x 的命令行版 12306 火车票查询器
 
 Usage:
     train_tickets_cli.py (<from_city>) (<dest_city>) [<date>]
@@ -31,12 +31,7 @@ class TrainTicketsFinder():
         # 不支持的坐席类别用下面的符号表示
         self.unsupported_seat = colortext.light_yellow('×')
         # 获取并加载全国火车站站名信息
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.stations_json_file_cn_key = os.path.join(current_dir, 'stations_cn_key.json')
-        self.stations_json_file_en_key = os.path.join(current_dir, 'stations_en_key.json')
         self.fetch_all_station_names()
-        self.stations_cn_key = json.load(open(self.stations_json_file_cn_key, 'rb'))
-        self.stations_en_key = json.load(open(self.stations_json_file_en_key, 'rb'))
         # 尝试获取 12306 网站 cookie
         self.try_fetching_cookie()
 
@@ -52,6 +47,10 @@ class TrainTicketsFinder():
         stations_cn_key.json 用于查询车票时，命令行输入出发城市和到达城市中文名，然后匹配对应的站名英文简写发请求
         stations_en_key.json 用于处理查询响应，接口返回的是站名英文简写，要在结果中显示出中文站名，就需要再做匹配
         '''
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.stations_json_file_cn_key = os.path.join(current_dir, 'stations_cn_key.json')
+        self.stations_json_file_en_key = os.path.join(current_dir, 'stations_en_key.json')
+        # 文件不存在就请求接口获取数据并写入文件
         if not os.path.exists(self.stations_json_file_cn_key):
             data = requests.get('https://www.12306.cn/index/script/core/common/station_name_v10042.js')
             data.encoding = self.response_encoding
@@ -64,6 +63,9 @@ class TrainTicketsFinder():
                 stations_json_file_en_key = open(self.stations_json_file_en_key, 'w', encoding = data.encoding)
                 stations_dict_en_key = dict(zip(stations_dict_cn_key.values(), stations_dict_cn_key.keys()))
                 json.dump(stations_dict_en_key, stations_json_file_en_key, ensure_ascii = False)
+        # 文件存在就加载进内存
+        self.stations_cn_key = json.load(open(self.stations_json_file_cn_key, 'rb'))
+        self.stations_en_key = json.load(open(self.stations_json_file_en_key, 'rb'))
     
     def query_satisfied_trains_info(self):
         '''
