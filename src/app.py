@@ -9,8 +9,6 @@ Example:
     python3 app.py 成都 重庆 2019-10-24
 """
 
-import json
-import os
 import re
 import time
 from datetime import date
@@ -20,6 +18,7 @@ from docopt import docopt
 from prettytable import PrettyTable
 
 import colortext
+from mysqlite import Sqlite
 
 
 class TrainTicketsFinder:
@@ -33,37 +32,22 @@ class TrainTicketsFinder:
         self.request_interval_seconds = 5
         # 不支持的坐席类别用下面的符号表示
         self.unsupported_seat = colortext.light_yellow('×')
-        # 尝试获取 12306 网站 cookie
-        self.cookies = requests.get('https://kyfw.12306.cn/otn/leftTicket/init?linktypeid=dc').cookies
+        # 初始化数据库并创建数据表
+        self.db = Sqlite('data.sqlite3')
         # 获取并加载全国火车站站名信息
         self.fetch_all_station_names()
+        # 尝试获取 12306 网站 cookie
+        self.cookies = requests.get('https://kyfw.12306.cn/otn/leftTicket/init?linktypeid=dc').cookies
 
     def fetch_all_station_names(self):
-        """
-        获取全国火车站站名信息，在 12306 网站上是以下面的 JavaScript 链接直接写死了返回来的
-        查询车票请求主要需要用到里面的中文站名以及站名的英文简写，函数中将它们整理成一个字典，并最终存成 json 文件
-        stations_cn_key.json 用于查询车票时，命令行输入出发城市和到达城市中文名，然后匹配对应的站名英文简写发请求
-        stations_en_key.json 用于处理查询响应，接口返回的是站名英文简写，要在结果中显示出中文站名，就需要再做匹配
-        """
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.stations_json_file_cn_key = os.path.join(current_dir, 'stations_cn_key.json')
-        self.stations_json_file_en_key = os.path.join(current_dir, 'stations_en_key.json')
-        # 文件不存在就请求接口获取数据并写入文件
-        if not os.path.exists(self.stations_json_file_cn_key):
+        """获取全国火车站站名信息，在 12306 网站上是以下面的 JavaScript 链接直接写死了返回来的"""
+        if self.db.select_one_from(self.db.table_name_station) is None:
             data = requests.get('https://www.12306.cn/index/script/core/common/station_name_v10042.js')
             data.encoding = self.response_encoding
 
             if data.status_code == 200:
                 stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)', data.text)
-                stations_dict_cn_key = dict(stations)
-                stations_json_file_cn_key = open(self.stations_json_file_cn_key, 'w', encoding=data.encoding)
-                json.dump(stations_dict_cn_key, stations_json_file_cn_key, ensure_ascii=False)
-                stations_json_file_en_key = open(self.stations_json_file_en_key, 'w', encoding=data.encoding)
-                stations_dict_en_key = dict(zip(stations_dict_cn_key.values(), stations_dict_cn_key.keys()))
-                json.dump(stations_dict_en_key, stations_json_file_en_key, ensure_ascii=False)
-        # 文件存在就加载进内存
-        self.stations_cn_key = json.load(open(self.stations_json_file_cn_key, 'rb'))
-        self.stations_en_key = json.load(open(self.stations_json_file_en_key, 'rb'))
+                self.db.batch_insert_stations_data(stations)
 
     def query_satisfied_trains_info(self):
         """
@@ -76,11 +60,13 @@ class TrainTicketsFinder:
         from_city = self.args['<from_city>']
         dest_city = self.args['<dest_city>']
         # 检查输入的城市名是否正确
-        if from_city not in self.stations_cn_key.keys():
+        from_station_en = self.db.select_station_name_en(from_city)
+        if from_station_en is None:
             print(colortext.light_red('\n参数错误：出发城市 [%s] 不是一个正确的城市名' % from_city))
             return False
 
-        if dest_city not in self.stations_cn_key.keys():
+        dest_station_en = self.db.select_station_name_en(dest_city)
+        if dest_station_en is None:
             print(colortext.light_red('\n参数错误：到达城市 [%s] 不是一个正确的城市名' % dest_city))
             return False
 
@@ -95,8 +81,8 @@ class TrainTicketsFinder:
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
         request_params = {
             'leftTicketDTO.train_date': train_date,
-            'leftTicketDTO.from_station': self.stations_cn_key[from_city],
-            'leftTicketDTO.to_station': self.stations_cn_key[dest_city],
+            'leftTicketDTO.from_station': from_station_en,
+            'leftTicketDTO.to_station': dest_station_en,
             'purpose_codes': 'ADULT'
         }
         response = requests.get(api, params=request_params, cookies=self.cookies)
@@ -123,10 +109,10 @@ class TrainTicketsFinder:
                 # 车次
                 train_num = train_info[3]
                 # 出发车站
-                from_station = colortext.light_green(self.stations_en_key[train_info[6]])
+                from_station_cn = colortext.light_green(self.db.select_station_name_cn(train_info[6]))
                 # 到达车站
-                dest_station = colortext.light_red(self.stations_en_key[train_info[7]])
-                station = from_station + '\n' + dest_station
+                dest_station_cn = colortext.light_red(self.db.select_station_name_cn(train_info[7]))
+                station = from_station_cn + '\n' + dest_station_cn
                 # 发车时间
                 from_time = colortext.light_green(train_info[8])
                 # 到达时间
