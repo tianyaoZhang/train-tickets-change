@@ -3,10 +3,10 @@
 基于 Python 3.x 的命令行版 12306 火车票查询器
 
 Usage:
-    train_tickets_cli.py (<from_city>) (<dest_city>) [<date>]
+    app.py (<from_city>) (<dest_city>) [<date>]
 
 Example:
-    python3 train_tickets_cli.py 成都 重庆 2019-10-24
+    python3 app.py 成都 重庆 2019-10-24
 """
 
 import json
