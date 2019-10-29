@@ -10,6 +10,7 @@ Example:
 """
 
 import re
+import sys
 import time
 from datetime import date
 
@@ -57,27 +58,7 @@ class TrainTicketsFinder:
         leftTicketDTO.to_station - 到达车站，同出发车站做了一样的处理
         purpose_codes - 普通票或学生票，普通票传值为 ADULT
         """
-        from_city = self.args['<from_city>']
-        dest_city = self.args['<dest_city>']
-        # 检查输入的城市名是否正确
-        from_station_en = self.db.select_station_name_en(from_city)
-        if from_station_en is None:
-            print(colortext.light_red('\n参数错误：出发城市 [%s] 不是一个正确的城市名' % from_city))
-            return False
-
-        dest_station_en = self.db.select_station_name_en(dest_city)
-        if dest_station_en is None:
-            print(colortext.light_red('\n参数错误：到达城市 [%s] 不是一个正确的城市名' % dest_city))
-            return False
-
-        # 检查输入的乘车日期是否正确
-        train_date = self.args['<date>']
-        today_date_str = str(date.today())
-        train_date = train_date or today_date_str
-        if train_date < today_date_str:
-            print(colortext.light_yellow('\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % train_date))
-            train_date = today_date_str
-
+        from_city, dest_city, from_station_en, dest_station_en, train_date = self._check_input_args()
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
         request_params = {
             'leftTicketDTO.train_date': train_date,
@@ -177,6 +158,31 @@ class TrainTicketsFinder:
             prices['no_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', price_info.get('WZ', '')))
 
         return prices
+
+    def _check_input_args(self):
+        from_city = self.args['<from_city>']
+        dest_city = self.args['<dest_city>']
+
+        # 检查输入的城市名是否正确
+        from_station_en = self.db.select_station_name_en(from_city)
+        if from_station_en is None:
+            print(colortext.light_red('\n参数错误：出发城市 [%s] 不是一个正确的城市名' % from_city))
+            sys.exit(1)
+
+        dest_station_en = self.db.select_station_name_en(dest_city)
+        if dest_station_en is None:
+            print(colortext.light_red('\n参数错误：到达城市 [%s] 不是一个正确的城市名' % dest_city))
+            sys.exit(1)
+
+        # 检查输入的乘车日期是否正确
+        train_date = self.args['<date>']
+        today_date_str = str(date.today())
+        train_date = train_date or today_date_str
+        if train_date < today_date_str:
+            print(colortext.light_yellow('\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % train_date))
+            train_date = today_date_str
+
+        return from_city, dest_city, from_station_en, dest_station_en, train_date
 
 
 if __name__ == '__main__':
