@@ -178,7 +178,9 @@ class TrainTicketsFinder:
         train_date = self.args['<date>']
         today_date_str = str(date.today())
         train_date = train_date or today_date_str
-        if train_date < today_date_str:
+        is_date = re.match(r'^(2\d{3}-\d{2}-\d{2})$', train_date)
+        train_date_ymd = train_date.split('-')
+        if not is_date or int(train_date_ymd[1]) > 12 or int(train_date_ymd[2]) > 31 or train_date < today_date_str:
             print(colortext.light_yellow('\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % train_date))
             train_date = today_date_str
 
