@@ -23,7 +23,8 @@ class Sqlite:
             CREATE TABLE IF NOT EXISTS %s (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name_cn VARCHAR(5) NOT NULL,
-                name_en CHAR(3) NOT NULL
+                name_en CHAR(3) NOT NULL,
+                name_pinyin VARCHAR(16) NOT NULL
             )
         ''' % self.table_name_station
         self._create_table(sql)
@@ -31,7 +32,7 @@ class Sqlite:
     def batch_insert_stations_data(self, stations_data):
         for i, station in enumerate(stations_data):
             stations_data[i] = str(station)
-        sql = 'INSERT INTO %s (name_cn, name_en) VALUES' % self.table_name_station
+        sql = 'INSERT INTO %s (name_cn, name_en, name_pinyin) VALUES' % self.table_name_station
         sql += Sqlite.COMMA.join(stations_data)
         try:
             self.cursor.execute(sql)
@@ -41,8 +42,10 @@ class Sqlite:
             self.connect.rollback()
             self.connect.close()
 
-    def select_station_name_en(self, name_cn):
-        sql = 'SELECT name_en FROM %s WHERE name_cn = "%s"' % (self.table_name_station, name_cn)
+    def select_station_name_en(self, input_station_name):
+        sql = 'SELECT name_en FROM %s WHERE name_cn = "%s" OR name_pinyin = "%s"' % (
+            self.table_name_station, input_station_name, input_station_name
+        )
         try:
             self.cursor.execute(sql)
             result = self.cursor.fetchone()
@@ -51,8 +54,10 @@ class Sqlite:
             print(colortext.light_red('数据查询失败：%s\n发生异常：%s' % (sql, error)))
             self.connect.close()
 
-    def select_station_name_cn(self, name_en):
-        sql = 'SELECT name_cn FROM %s WHERE name_en = "%s"' % (self.table_name_station, name_en)
+    def select_station_name_cn(self, input_station_name):
+        sql = 'SELECT name_cn FROM %s WHERE name_en = "%s" OR name_pinyin = "%s"' % (
+            self.table_name_station, input_station_name, input_station_name
+        )
         try:
             self.cursor.execute(sql)
             result = self.cursor.fetchone()

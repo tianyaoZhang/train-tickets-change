@@ -47,7 +47,7 @@ class TrainTicketsFinder:
             data.encoding = self.response_encoding
 
             if data.status_code == 200:
-                stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)', data.text)
+                stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)\|([a-z]+)', data.text)
                 self.db.batch_insert_stations_data(stations)
 
     def query_satisfied_trains_info(self):
@@ -71,8 +71,8 @@ class TrainTicketsFinder:
         if response.status_code == 200:
             trains_info = response.json().get('data').get('result')
             train_date = colortext.light_yellow(train_date)
-            from_city = colortext.light_green(from_city)
-            dest_city = colortext.light_red(dest_city)
+            from_city = colortext.light_green(self.db.select_station_name_cn(from_city))
+            dest_city = colortext.light_red(self.db.select_station_name_cn(dest_city))
             train_count = colortext.light_blue(len(trains_info))
             print('\n查询到 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
 
