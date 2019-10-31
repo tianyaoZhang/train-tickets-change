@@ -2,21 +2,21 @@
 基于 Python 3.x 的命令行版 12306 火车票查询器
 
 ### 安装依赖包
-##### Windows
+#### Windows
 ```
 pip install requests docopt colorama prettytable
 ```
-##### macOS / Linux
+#### macOS / Linux
 ```
 pip3 install requests docopt colorama prettytable
 ```
 
 ### 使用方式
-##### Windows
+#### Windows
 ```
 python src/app.py <from_city> <dest_city> [<date>]
 ```
-##### macOS / Linux
+#### macOS / Linux
 ```
 python3 src/app.py <from_city> <dest_city> [<date>]
 ```
@@ -28,7 +28,7 @@ date - 乘车日期，格式要求为YYYY-mm-dd，例如：2019-10-24（可选�
 ```
 
 ### 使用举例
-##### Windows
+#### Windows
 ```
 python src/app.py 成都 重庆
 python src/app.py chengdu chongqing
@@ -36,7 +36,7 @@ python src/app.py chengdu chongqing
 python src/app.py 成都 重庆 2019-10-24
 python src/app.py chengdu chongqing 2019-10-24
 ```
-##### macOS / Linux
+#### macOS / Linux
 ```
 python3 src/app.py 成都 重庆
 python3 src/app.py chengdu chongqing
