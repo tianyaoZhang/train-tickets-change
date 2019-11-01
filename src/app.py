@@ -66,17 +66,13 @@ class TrainTicketsFinder:
         response = requests.get(api, params=request_params, cookies=self.cookies)
 
         if response.status_code == 200:
-            trains_info = response.json().get('data').get('result')
-            train_date = colortext.light_yellow(train_date)
-            from_city = colortext.light_green(self.db.select_station_name_cn(from_city))
-            dest_city = colortext.light_red(self.db.select_station_name_cn(dest_city))
-            train_count = colortext.light_blue(len(trains_info))
-            print('\n查询到 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
-
             result_table = PrettyTable()
+            trains_info = response.json().get('data').get('result')
+            print(colortext.light_green('\n车次及余票信息查询成功，正在查询票价数据...\n'))
             result_table.field_names = ['车次', '车站', '时间', '历时', '商务座/特等座', '一等座', '二等座', '软卧', '硬卧', '硬座', '站票']
 
             # 遍历查询到的全部车次信息
+            satisfied_train_count = len(trains_info)
             for train in trains_info:
                 '''
                 按 12306 现有的接口，返回的数据是一个列表，单条数据是以 | 分隔的字符串
@@ -88,6 +84,7 @@ class TrainTicketsFinder:
                 train_number = train_info[3]
                 # 根据输入参数过滤列车类型
                 if self.args.get('-' + train_number[0].lower()) is False:
+                    satisfied_train_count -= 1
                     continue
 
                 # 出发车站
@@ -111,6 +108,12 @@ class TrainTicketsFinder:
                     prices['hard_sleep'], prices['hard_seat'], prices['no_seat']
                 ])
 
+            # 打印数据结果
+            train_date = colortext.light_yellow(train_date)
+            from_city = colortext.light_green(self.db.select_station_name_cn(from_city))
+            dest_city = colortext.light_red(self.db.select_station_name_cn(dest_city))
+            train_count = colortext.light_blue(satisfied_train_count)
+            print('\n查询到满足条件的 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
             print(result_table)
 
     def query_train_prices(self, train_info, train_date):
