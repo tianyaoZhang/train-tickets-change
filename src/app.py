@@ -3,10 +3,7 @@
 基于 Python 3.x 的命令行版 12306 火车票查询器
 
 Usage:
-    app.py (<from_city>) (<dest_city>) [<date>]
-
-Example:
-    python3 app.py 成都 重庆 2019-10-24
+    app.py (<from_city>) (<dest_city>) [<date>] [-g][-c][-d][-k][-t][-z][-l]
 """
 
 import re
@@ -88,7 +85,11 @@ class TrainTicketsFinder:
                 '''
                 train_info = train.split('|')
                 # 车次
-                train_num = train_info[3]
+                train_number = train_info[3]
+                # 根据输入参数过滤列车类型
+                if self.args.get('-' + train_number[0].lower()) is False:
+                    continue
+
                 # 出发车站
                 from_station_cn = colortext.light_green(self.db.select_station_name_cn(train_info[6]))
                 # 到达车站
@@ -105,7 +106,7 @@ class TrainTicketsFinder:
                 prices = self.query_train_prices(train_info, train_date=request_params['leftTicketDTO.train_date'])
 
                 result_table.add_row([
-                    train_num, station, train_time, duration, prices['special_seat'],
+                    train_number, station, train_time, duration, prices['special_seat'],
                     prices['first_seat'], prices['second_seat'], prices['soft_sleep'],
                     prices['hard_sleep'], prices['hard_seat'], prices['no_seat']
                 ])
