@@ -55,7 +55,7 @@ class TrainTicketsFinder:
         leftTicketDTO.to_station - 到达车站，同出发车站做了一样的处理
         purpose_codes - 普通票或学生票，普通票传值为 ADULT
         """
-        from_city, dest_city, from_station_en, dest_station_en, train_date = self._check_input_args()
+        from_city, dest_city, from_station_en, dest_station_en, train_date, need_filter = self._check_input_args()
         api = 'https://kyfw.12306.cn/otn/leftTicket/query'
         request_params = {
             'leftTicketDTO.train_date': train_date,
@@ -83,7 +83,8 @@ class TrainTicketsFinder:
                 # 车次
                 train_number = train_info[3]
                 # 根据输入参数过滤列车类型
-                if self.args.get('-' + train_number[0].lower()) is False:
+                train_type_option = '-' + train_number[0].lower()
+                if need_filter and self.args[train_type_option] is False:
                     satisfied_train_count -= 1
                     continue
 
@@ -164,6 +165,7 @@ class TrainTicketsFinder:
         return prices
 
     def _check_input_args(self):
+        """检查输入参数"""
         from_city = self.args['<from_city>']
         dest_city = self.args['<dest_city>']
 
@@ -188,7 +190,13 @@ class TrainTicketsFinder:
             print(colortext.light_yellow('\n参数错误：乘车日期 [%s] 不正确，将自动查询今天的车次信息' % train_date))
             train_date = today_date_str
 
-        return from_city, dest_city, from_station_en, dest_station_en, train_date
+        # 判断是否需要执行列车类型过滤操作
+        need_filter = 0
+        for train_type in ['-g', '-c', '-d', '-k', '-t', '-z', '-l']:
+            if self.args[train_type] is True:
+                need_filter += 1
+
+        return from_city, dest_city, from_station_en, dest_station_en, train_date, need_filter
 
 
 if __name__ == '__main__':
