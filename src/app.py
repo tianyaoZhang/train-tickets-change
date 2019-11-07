@@ -44,7 +44,7 @@ class TrainTicketsFinder:
             data.encoding = self.response_encoding
 
             if data.status_code == 200:
-                stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)\|([a-z]+)', data.text)
+                stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)\|([a-z]+)\|([a-z]+)', data.text)
                 self.db.batch_insert_stations_data(stations)
 
     def query_satisfied_trains_info(self):

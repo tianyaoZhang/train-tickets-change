@@ -24,7 +24,8 @@ class Sqlite:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name_cn VARCHAR(5) NOT NULL,
                 name_en CHAR(3) NOT NULL,
-                name_pinyin VARCHAR(16) NOT NULL
+                name_pinyin VARCHAR(16) NOT NULL,
+                name_pinyin_short VARCHAR(5) NOT NULL
             )
         ''' % self.table_name_station
         self._create_table(sql)
@@ -32,7 +33,7 @@ class Sqlite:
     def batch_insert_stations_data(self, stations_data):
         for i, station in enumerate(stations_data):
             stations_data[i] = str(station)
-        sql = 'INSERT INTO %s (name_cn, name_en, name_pinyin) VALUES' % self.table_name_station
+        sql = 'INSERT INTO %s (name_cn, name_en, name_pinyin, name_pinyin_short) VALUES' % self.table_name_station
         sql += Sqlite.COMMA.join(stations_data)
         try:
             self.cursor.execute(sql)
