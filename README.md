@@ -4,11 +4,11 @@
 ### 安装依赖包
 #### Windows
 ```
-pip install requests docopt colorama prettytable
+pip install -r requirements.txt
 ```
 #### macOS / Linux
 ```
-pip3 install requests docopt colorama prettytable
+pip3 install -r requirements.txt
 ```
 
 ### 使用方式
