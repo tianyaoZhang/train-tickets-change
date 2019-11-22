@@ -40,11 +40,10 @@ class TrainTicketsFinder:
     def fetch_all_station_names(self):
         """获取全国火车站站名信息，在 12306 网站上是以下面的 JavaScript 链接直接写死了返回来的"""
         if self.db.select_one_from(self.db.table_name_station) is None:
-            data = requests.get('https://www.12306.cn/index/script/core/common/station_name_v10042.js')
-            data.encoding = self.response_encoding
-
-            if data.status_code == 200:
-                stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)\|([a-z]+)\|([a-z]+)', data.text)
+            response = requests.get('https://www.12306.cn/index/script/core/common/station_name_v10042.js')
+            response.encoding = self.response_encoding
+            if response.ok:
+                stations = re.findall(r'([\u4e00-\u9fa5]+)\|([A-Z]+)\|([a-z]+)\|([a-z]+)', response.text)
                 self.db.batch_insert_stations_data(stations)
 
     def query_satisfied_trains_info(self):
@@ -65,7 +64,7 @@ class TrainTicketsFinder:
         }
         response = requests.get(api, params=request_params, cookies=self.cookies)
 
-        if response.status_code == 200:
+        if response.ok:
             result_table = PrettyTable()
             trains_info = response.json().get('data').get('result')
             print(colortext.light_green('\n车次及余票信息查询成功，正在查询票价数据...\n'))
@@ -145,7 +144,7 @@ class TrainTicketsFinder:
             'no_seat': train_info[26] or self.unsupported_seat  # 站票余票
         }
 
-        if response.status_code == 200:
+        if response.ok:
             '''
             通过测试和观察，查询车票请求频率过快时会大概率导致请求失败，从而得到错误页面而不是正确的响应
             所以此处暂时以简单的方式做一个请求频率限制，每请求成功一次睡眠几秒钟，以此来规避请求异常问题
