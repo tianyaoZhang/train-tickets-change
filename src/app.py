@@ -79,28 +79,16 @@ class TrainTicketsFinder:
                 不知道官方接口为什么要这样返回数据，防止爬虫？感觉这样也防不住啊！
                 '''
                 train_info = train.split('|')
-                # 车次
-                train_number = train_info[3]
+                train_number, station, train_time, duration = self._format_train_info_fields(train_info)
+
                 # 根据输入参数过滤列车类型
                 train_type_option = '-' + train_number[0].lower()
                 if need_filter and self.args[train_type_option] is False:
                     satisfied_train_count -= 1
                     continue
 
-                # 出发车站
-                from_station_cn = colortext.light_green(self.db.select_station_name_cn(train_info[6]))
-                # 到达车站
-                dest_station_cn = colortext.light_red(self.db.select_station_name_cn(train_info[7]))
-                station = from_station_cn + '\n' + dest_station_cn
-                # 发车时间
-                from_time = colortext.light_green(train_info[8])
-                # 到达时间
-                dest_time = colortext.light_red(train_info[9])
-                train_time = from_time + '\n' + dest_time
-                # 历时多久
-                duration = train_info[10]
                 # 余票及对应票价
-                prices = self.query_train_prices(train_info, train_date=request_params['leftTicketDTO.train_date'])
+                prices = self._query_train_prices(train_info, train_date=request_params['leftTicketDTO.train_date'])
 
                 result_table.add_row([
                     train_number, station, train_time, duration, prices['special_seat'],
@@ -116,7 +104,25 @@ class TrainTicketsFinder:
             print('\n查询到满足条件的 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
             print(result_table)
 
-    def query_train_prices(self, train_info, train_date):
+    def _format_train_info_fields(self, train_info):
+        # 车次
+        train_number = train_info[3]
+        # 出发车站
+        from_station_cn = colortext.light_green(self.db.select_station_name_cn(train_info[6]))
+        # 到达车站
+        dest_station_cn = colortext.light_red(self.db.select_station_name_cn(train_info[7]))
+        station = from_station_cn + '\n' + dest_station_cn
+        # 发车时间
+        from_time = colortext.light_green(train_info[8])
+        # 到达时间
+        dest_time = colortext.light_red(train_info[9])
+        train_time = from_time + '\n' + dest_time
+        # 历时多久
+        duration = train_info[10]
+
+        return train_number, station, train_time, duration
+
+    def _query_train_prices(self, train_info, train_date):
         """查询各个坐席的票价"""
         # 查询票价需要用到的请求参数
         train_uuid = train_info[2]
