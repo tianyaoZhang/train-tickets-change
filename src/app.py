@@ -66,13 +66,13 @@ class TrainTicketsFinder:
 
         if response.ok:
             result_table = PrettyTable()
-            trains_info = response.json().get('data').get('result')
+            train_list = response.json().get('data').get('result')
             print(colortext.light_green('\n车次及余票信息查询成功，正在查询票价数据...\n'))
             result_table.field_names = ['车次', '车站', '时间', '历时', '商务座/特等座', '一等座', '二等座', '软卧', '硬卧', '硬座', '站票']
 
             # 遍历查询到的全部车次信息
-            satisfied_train_count = len(trains_info)
-            for train in trains_info:
+            satisfied_train_count = 0
+            for train in train_list:
                 '''
                 按 12306 现有的接口，返回的数据是一个列表，单条数据是以 | 分隔的字符串
                 在分析这里的数据时，我是靠规律和基本猜测确定对应数据在哪个字段上的
@@ -82,19 +82,16 @@ class TrainTicketsFinder:
                 train_number, station, train_time, duration = self._format_train_info_fields(train_info)
 
                 # 根据输入参数过滤列车类型
-                train_type_option = '-' + train_number[0].lower()
-                if need_filter and self.args[train_type_option] is False:
-                    satisfied_train_count -= 1
-                    continue
-
-                # 余票及对应票价
-                prices = self._query_train_prices(train_info, train_date=request_params['leftTicketDTO.train_date'])
-
-                result_table.add_row([
-                    train_number, station, train_time, duration, prices['special_seat'],
-                    prices['first_seat'], prices['second_seat'], prices['soft_sleep'],
-                    prices['hard_sleep'], prices['hard_seat'], prices['no_seat']
-                ])
+                current_train_type = '-' + train_number[0].lower()
+                if not need_filter or self.args[current_train_type] is True:
+                    satisfied_train_count += 1
+                    # 余票及对应票价
+                    tickets_and_prices = self._query_train_tickets_and_prices(train_info, train_date)
+                    result_table.add_row([
+                        train_number, station, train_time, duration, tickets_and_prices['special_seat'],
+                        tickets_and_prices['first_seat'], tickets_and_prices['second_seat'], tickets_and_prices['soft_sleep'],
+                        tickets_and_prices['hard_sleep'], tickets_and_prices['hard_seat'], tickets_and_prices['no_seat']
+                    ])
 
             # 打印数据结果
             train_date = colortext.light_yellow(train_date)
@@ -122,8 +119,9 @@ class TrainTicketsFinder:
 
         return train_number, station, train_time, duration
 
-    def _query_train_prices(self, train_info, train_date):
-        """查询各个坐席的票价"""
+    def _query_train_tickets_and_prices(self, train_info, train_date):
+        """整理余票数据，查询各个坐席的票价"""
+
         # 查询票价需要用到的请求参数
         train_uuid = train_info[2]
         from_station_no = train_info[16]
@@ -140,7 +138,7 @@ class TrainTicketsFinder:
         }
         response = requests.get(api, params=request_params, cookies=self.cookies)
 
-        prices = {
+        tickets_and_prices = {
             'special_seat': train_info[32] or self.unsupported_seat,  # 商务座/特等座余票
             'first_seat': train_info[31] or self.unsupported_seat,  # 一等座余票
             'second_seat': train_info[30] or self.unsupported_seat,  # 二等座余票
@@ -158,16 +156,16 @@ class TrainTicketsFinder:
             print('编号为 %s 的列车票价请求成功，%d 秒后执行下一次车票查询请求' % (train_uuid, self.request_interval_seconds))
             time.sleep(self.request_interval_seconds)
             price_info = response.json().get('data')
-            prices['special_seat'] += '\n' + colortext.light_yellow(price_info.get('A9', ''))
-            prices['first_seat'] += '\n' + colortext.light_yellow(price_info.get('M', ''))
-            prices['second_seat'] += '\n' + colortext.light_yellow(price_info.get('O', ''))
-            prices['soft_sleep'] += '\n' + colortext.light_yellow(price_info.get('A4', ''))
-            prices['hard_sleep'] += '\n' + colortext.light_yellow(price_info.get('A3', ''))
-            prices['hard_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', ''))
+            tickets_and_prices['special_seat'] += '\n' + colortext.light_yellow(price_info.get('A9', ''))
+            tickets_and_prices['first_seat'] += '\n' + colortext.light_yellow(price_info.get('M', ''))
+            tickets_and_prices['second_seat'] += '\n' + colortext.light_yellow(price_info.get('O', ''))
+            tickets_and_prices['soft_sleep'] += '\n' + colortext.light_yellow(price_info.get('A4', ''))
+            tickets_and_prices['hard_sleep'] += '\n' + colortext.light_yellow(price_info.get('A3', ''))
+            tickets_and_prices['hard_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', ''))
             # 站票票价先匹配普通列车，等于硬座票价，如果匹配不到，那么就等于二等座的票价
-            prices['no_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', price_info.get('WZ', '')))
+            tickets_and_prices['no_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', price_info.get('WZ', '')))
 
-        return prices
+        return tickets_and_prices
 
     def _check_input_args(self):
         """检查输入参数"""
