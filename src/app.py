@@ -88,9 +88,9 @@ class TrainTicketsFinder:
                     # 余票及对应票价
                     tickets_and_prices = self._query_train_tickets_and_prices(train_info, train_date)
                     result_table.add_row([
-                        train_number, station, train_time, duration, tickets_and_prices['special_seat'],
-                        tickets_and_prices['first_seat'], tickets_and_prices['second_seat'], tickets_and_prices['soft_sleep'],
-                        tickets_and_prices['hard_sleep'], tickets_and_prices['hard_seat'], tickets_and_prices['no_seat']
+                        train_number, station, train_time, duration, tickets_and_prices['swz'],
+                        tickets_and_prices['ydz'], tickets_and_prices['edz'], tickets_and_prices['rw'],
+                        tickets_and_prices['yw'], tickets_and_prices['yz'], tickets_and_prices['wz']
                     ])
 
             # 打印数据结果
@@ -139,13 +139,13 @@ class TrainTicketsFinder:
         response = requests.get(api, params=request_params, cookies=self.cookies)
 
         tickets_and_prices = {
-            'special_seat': train_info[32] or self.unsupported_seat,  # 商务座/特等座余票
-            'first_seat': train_info[31] or self.unsupported_seat,  # 一等座余票
-            'second_seat': train_info[30] or self.unsupported_seat,  # 二等座余票
-            'soft_sleep': train_info[23] or self.unsupported_seat,  # 软卧余票
-            'hard_sleep': train_info[28] or self.unsupported_seat,  # 硬卧余票
-            'hard_seat': train_info[29] or self.unsupported_seat,  # 硬座余票
-            'no_seat': train_info[26] or self.unsupported_seat  # 站票余票
+            'swz': train_info[32] or self.unsupported_seat,  # 商务座/特等座余票
+            'ydz': train_info[31] or self.unsupported_seat,  # 一等座余票
+            'edz': train_info[30] or self.unsupported_seat,  # 二等座余票
+            'rw': train_info[23] or self.unsupported_seat,  # 软卧余票
+            'yw': train_info[28] or self.unsupported_seat,  # 硬卧余票
+            'yz': train_info[29] or self.unsupported_seat,  # 硬座余票
+            'wz': train_info[26] or self.unsupported_seat  # 站票余票
         }
 
         if response.ok:
@@ -156,14 +156,14 @@ class TrainTicketsFinder:
             print('编号为 %s 的列车票价请求成功，%d 秒后执行下一次车票查询请求' % (train_uuid, self.request_interval_seconds))
             time.sleep(self.request_interval_seconds)
             price_info = response.json().get('data')
-            tickets_and_prices['special_seat'] += '\n' + colortext.light_yellow(price_info.get('A9', ''))
-            tickets_and_prices['first_seat'] += '\n' + colortext.light_yellow(price_info.get('M', ''))
-            tickets_and_prices['second_seat'] += '\n' + colortext.light_yellow(price_info.get('O', ''))
-            tickets_and_prices['soft_sleep'] += '\n' + colortext.light_yellow(price_info.get('A4', ''))
-            tickets_and_prices['hard_sleep'] += '\n' + colortext.light_yellow(price_info.get('A3', ''))
-            tickets_and_prices['hard_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', ''))
+            tickets_and_prices['swz'] += '\n' + colortext.light_yellow(price_info.get('A9', ''))
+            tickets_and_prices['ydz'] += '\n' + colortext.light_yellow(price_info.get('M', ''))
+            tickets_and_prices['edz'] += '\n' + colortext.light_yellow(price_info.get('O', ''))
+            tickets_and_prices['rw'] += '\n' + colortext.light_yellow(price_info.get('A4', ''))
+            tickets_and_prices['yw'] += '\n' + colortext.light_yellow(price_info.get('A3', ''))
+            tickets_and_prices['yz'] += '\n' + colortext.light_yellow(price_info.get('A1', ''))
             # 站票票价先匹配普通列车，等于硬座票价，如果匹配不到，那么就等于二等座的票价
-            tickets_and_prices['no_seat'] += '\n' + colortext.light_yellow(price_info.get('A1', price_info.get('WZ', '')))
+            tickets_and_prices['wz'] += '\n' + colortext.light_yellow(price_info.get('A1', price_info.get('WZ', '')))
 
         return tickets_and_prices
 
