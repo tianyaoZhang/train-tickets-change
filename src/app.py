@@ -56,7 +56,7 @@ class TrainTicketsFinder:
         purpose_codes - 普通票或学生票，普通票传值为 ADULT
         """
         from_city, dest_city, from_station_en, dest_station_en, train_date, need_filter = self._check_input_args()
-        api = 'https://kyfw.12306.cn/otn/leftTicket/query'
+        api = 'https://kyfw.12306.cn/otn/leftTicket/queryO'
         request_params = {
             'leftTicketDTO.train_date': train_date,
             'leftTicketDTO.from_station': from_station_en,
@@ -66,15 +66,17 @@ class TrainTicketsFinder:
         response = requests.get(api, params=request_params, cookies=self.cookies)
 
         if response.ok:
-            result_table = PrettyTable()
             try:
-                response.json()
+                response_json = response.json()
+                train_list = response_json.get('data').get('result')
+                print(colortext.light_green('\n车次及余票信息查询成功，正在查询票价数据...\n'))
             except JSONDecodeError:
                 print(colortext.light_red('[ERROR] JSON解析异常，可能是旧的请求API发生变化\n%s' % api))
                 sys.exit()
-            train_list = response.json().get('data').get('result')
-            print(colortext.light_green('\n车次及余票信息查询成功，正在查询票价数据...\n'))
-            result_table.field_names = ['车次', '车站', '时间', '历时', '商务座/特等座', '一等座', '二等座', '软卧', '硬卧', '硬座', '站票']
+
+            result_table = PrettyTable()
+            table_header = ['车次', '车站', '时间', '历时', '商务座/特等座', '一等座', '二等座', '软卧', '硬卧', '硬座', '站票']
+            result_table.field_names = table_header
 
             # 遍历查询到的全部车次信息
             satisfied_train_count = 0
@@ -90,21 +92,25 @@ class TrainTicketsFinder:
                 # 根据输入参数过滤列车类型
                 current_train_type = '-' + train_number[0].lower()
                 if not need_filter or self.args[current_train_type] is True:
-                    satisfied_train_count += 1
-                    # 余票及对应票价
-                    tickets_and_prices = self._query_train_tickets_and_prices(train_info, train_date)
-                    result_table.add_row([
-                        train_number, station, train_time, duration, tickets_and_prices['swz'],
-                        tickets_and_prices['ydz'], tickets_and_prices['edz'], tickets_and_prices['rw'],
-                        tickets_and_prices['yw'], tickets_and_prices['yz'], tickets_and_prices['wz']
-                    ])
+                    # 跳过【停运列车】的数据查询
+                    if train_info[1] != '列车停运':
+                        satisfied_train_count += 1
+                        # 余票及对应票价
+                        tickets_and_prices = self._query_train_tickets_and_prices(train_info, train_date)
+                        result_table.add_row([
+                            train_number, station, train_time, duration, tickets_and_prices['swz'],
+                            tickets_and_prices['ydz'], tickets_and_prices['edz'], tickets_and_prices['rw'],
+                            tickets_and_prices['yw'], tickets_and_prices['yz'], tickets_and_prices['wz']
+                        ])
 
             # 打印数据结果
             train_date = colortext.light_yellow(train_date)
             from_city = colortext.light_green(self.db.select_station_name_cn(from_city))
             dest_city = colortext.light_red(self.db.select_station_name_cn(dest_city))
             train_count = colortext.light_blue(satisfied_train_count)
-            print('\n查询到满足条件的 %s 从 %s 到 %s 的列车一共 %s 趟\n' % (train_date, from_city, dest_city, train_count))
+            print('\n查询到满足条件的 %s 从 %s 到 %s 的列车一共 %s 趟（不包含已停运列车数据）\n' % (
+                train_date, from_city, dest_city, train_count
+            ))
             print(result_table)
 
     def _format_train_info_fields(self, train_info):
@@ -161,7 +167,12 @@ class TrainTicketsFinder:
             '''
             print('编号为 %s 的列车票价请求成功，%d 秒后执行下一次车票查询请求' % (train_uuid, self.request_interval_seconds))
             time.sleep(self.request_interval_seconds)
-            price_info = response.json().get('data')
+            try:
+                response_json = response.json()
+                price_info = response_json.get('data')
+            except JSONDecodeError:
+                print(colortext.light_red('[ERROR] JSON解析异常，可能是请求参数异常\n%s' % request_params))
+                sys.exit()
             tickets_and_prices['swz'] += '\n' + colortext.light_yellow(price_info.get('A9', ''))
             tickets_and_prices['ydz'] += '\n' + colortext.light_yellow(price_info.get('M', ''))
             tickets_and_prices['edz'] += '\n' + colortext.light_yellow(price_info.get('O', ''))
