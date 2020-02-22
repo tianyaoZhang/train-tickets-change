@@ -10,6 +10,7 @@ import re
 import sys
 import time
 from datetime import date
+from json import JSONDecodeError
 
 import requests
 from docopt import docopt
@@ -66,6 +67,11 @@ class TrainTicketsFinder:
 
         if response.ok:
             result_table = PrettyTable()
+            try:
+                response.json()
+            except JSONDecodeError:
+                print(colortext.light_red('[ERROR] JSON解析异常，可能是旧的请求API发生变化\n%s' % api))
+                sys.exit()
             train_list = response.json().get('data').get('result')
             print(colortext.light_green('\n车次及余票信息查询成功，正在查询票价数据...\n'))
             result_table.field_names = ['车次', '车站', '时间', '历时', '商务座/特等座', '一等座', '二等座', '软卧', '硬卧', '硬座', '站票']
