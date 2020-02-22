@@ -108,7 +108,7 @@ class TrainTicketsFinder:
             from_city = colortext.light_green(self.db.select_station_name_cn(from_city))
             dest_city = colortext.light_red(self.db.select_station_name_cn(dest_city))
             train_count = colortext.light_blue(satisfied_train_count)
-            print('\n查询到满足条件的 %s 从 %s 到 %s 的列车一共 %s 趟（不包含已停运列车数据）\n' % (
+            print('\n查询到满足条件的 %s 从 %s 到 %s 的列车一共 %s 趟（已过滤掉停运列车数据）\n' % (
                 train_date, from_city, dest_city, train_count
             ))
             print(result_table)
