@@ -58,4 +58,11 @@ python3 src/app.py chengdu chongqing 2019-11-11 -gdz
 ```
 
 ### 演示效果
-![演示效果图](demo.png?raw=true)
+显示中转策略搜索结果
+```angular2html
+app = TrainTicketsFinder()
+    # app.query_satisfied_trains_info()
+app.change("北京","呼和浩特东","鄂尔多斯","2021-01-16")
+```
+
+![演示效果图](demo.png)
