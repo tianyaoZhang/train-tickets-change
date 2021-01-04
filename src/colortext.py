@@ -5,19 +5,19 @@ from colorama import Fore, Style
 
 
 def light_red(content=''):
-    return _fore_color(color=Fore.LIGHTRED_EX, content=content)
+    return _fore_color(color=Fore.RED, content=content)
 
 
 def light_green(content=''):
-    return _fore_color(color=Fore.LIGHTGREEN_EX, content=content)
+    return _fore_color(color=Fore.GREEN, content=content)
 
 
 def light_blue(content=''):
-    return _fore_color(color=Fore.LIGHTBLUE_EX, content=content)
+    return _fore_color(color=Fore.BLUE, content=content)
 
 
 def light_yellow(content=''):
-    return _fore_color(color=Fore.LIGHTYELLOW_EX, content=content)
+    return _fore_color(color=Fore.YELLOW, content=content)
 
 
 def _fore_color(color=Fore.WHITE, content=''):
