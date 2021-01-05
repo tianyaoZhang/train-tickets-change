@@ -370,7 +370,7 @@ class TrainTicketsFinder:
         return str
     def calculte_timedelta(self,first,second):
         minutes = (second-first).seconds/60
-        hours = minutes // 60
+        hours = minutes // 60 + 24*(second-first).days
         minutes = minutes % 60
         return int(hours),int(minutes)
 
@@ -416,5 +416,6 @@ if __name__ == '__main__':
     app = TrainTicketsFinder()
     # app.query_satisfied_trains_info()
     train_date = "2021-01-05"
-    app.change("北京","呼和浩特东","鄂尔多斯","2021-01-16")
+    # app.change("北京","呼和浩特东","鄂尔多斯","2021-01-16")
+    app.change("EEC","包头","北京","2021-01-16")
 
